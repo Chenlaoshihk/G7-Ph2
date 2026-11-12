@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 老师查看成绩</title>
+<style>
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:#fdf6ec; color:#3a2b22; margin:0; padding:20px;}
+  .wrap{max-width:960px; margin:0 auto;}
+  a.home{display:inline-block; background:#c8392b; color:#fff; text-decoration:none; padding:8px 18px; border-radius:20px; margin-bottom:14px;}
+  h1{color:#c8392b; margin:4px 0 4px;}
+  p.note{color:#8a7a6d; font-size:.9rem; line-height:1.7; background:#fff8e8; border:1px dashed #e8a020; border-radius:8px; padding:10px 14px;}
+  .sec{background:#fffdf8; border:2px solid #e8a020; border-radius:12px; padding:16px; margin-top:14px;}
+  .sec h2{color:#c8392b; font-size:1.05rem; margin-bottom:10px;}
+  table{width:100%; border-collapse:collapse; font-size:.9rem;}
+  th,td{padding:8px 6px; border-bottom:1px solid #eee0c8; text-align:left; vertical-align:top;}
+  th{color:#a07b20;}
+  tr:nth-child(even) td{background:#fdf9ef;}
+  .empty{color:#a08a70; padding:10px 0;}
+  .btn{border:none; border-radius:8px; padding:8px 16px; cursor:pointer; font-family:inherit; margin-right:8px;}
+  .btn-red{background:#c8392b; color:#fff;}
+  .btn-gray{background:#f0e6d2; color:#7a6a55;}
+  .essay-detail{color:#6b5a4c; font-size:.82rem; margin-top:4px; max-width:420px; white-space:pre-wrap;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="home" href="index.html">🏠 回到主页</a>
+  <h1>📊 老师查看成绩</h1>
+  <p class="note">📌 说明：成绩保存在<b>学生的浏览器</b>里。让学生在同一台设备上打开本页（如平板车/helper 机），即可看到全部记录；也可以让学生点「复制我的成绩」把成绩粘贴发给你（邮件/Teams）。本页数据只存在这台设备的浏览器中，清除浏览器数据会清空记录。</p>
+
+  <div class="sec">
+    <h2>✉️ 书信写作练习</h2>
+    <div id="writingBox"></div>
+  </div>
+
+  <div class="sec">
+    <h2>🥟《节日美食》闯关游戏</h2>
+    <div id="gameBox"></div>
+  </div>
+
+  <p style="margin-top:16px;">
+    <button class="btn btn-red" onclick="clearAll()">🗑️ 清空全部记录</button>
+    <button class="btn btn-gray" onclick="location.reload()">🔄 刷新</button>
+  </p>
+</div>
+
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function load(key){ try{ return JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){ return []; } }
+function render(){
+  const w=load('cnPractice_writing_v1');
+  const g=load('cnPractice_game_v1');
+
+  const wBox=document.getElementById('writingBox');
+  if(w.length===0){ wBox.innerHTML='<div class="empty">还没有成绩记录。</div>'; }
+  else{
+    let rows=w.map(r=>{
+      let line='';
+      if(r.level===3){ line='第三关写信：等级 '+r.band+' | 格式 '+r.format+' | 句型 '+r.patterns+' | 字数 '+r.chars+' | 语法问题 '+r.errors+' 处'+(r.essay?'<div class="essay-detail">✍️ 信件内容：'+esc(r.essay)+'</div>':''); }
+      else{ line=esc(r.detail||('第'+r.level+'关完成')); }
+      return '<tr><td>'+esc(r.name)+'</td><td>'+esc(r.time)+'</td><td>'+line+'</td></tr>';
+    }).join('');
+    wBox.innerHTML='<table><tr><th>姓名</th><th>时间</th><th>成绩</th></tr>'+rows+'</table>';
+  }
+
+  const gBox=document.getElementById('gameBox');
+  if(g.length===0){ gBox.innerHTML='<div class="empty">还没有成绩记录。</div>'; }
+  else{
+    const rows=g.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.time)+'</td><td><b>'+r.total+'/100</b><br><span style="font-size:.82rem;color:#6b5a4c;">'+esc(r.detail)+'</span></td></tr>').join('');
+    gBox.innerHTML='<table><tr><th>姓名</th><th>时间</th><th>成绩</th></tr>'+rows+'</table>';
+  }
+}
+function clearAll(){
+  if(confirm('确定清空全部成绩记录吗？此操作不可恢复。')){
+    localStorage.removeItem('cnPractice_writing_v1');
+    localStorage.removeItem('cnPractice_game_v1');
+    render();
+  }
+}
+render();
+</script>
+</body>
+</html>

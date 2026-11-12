@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>节日美食 · 闯关游戏 2.0</title>
+<style>
+  :root{
+    --red:#c8392b; --gold:#e8a020; --bg:#fdf6ec; --ink:#3a2b22;
+    --green:#3f9d6e; --card:#fffdf8; --blue:#4a7fb5;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh;
+    padding-bottom:90px;
+    background-image:radial-gradient(circle at 10% 10%, rgba(232,160,32,.12) 0 120px, transparent 121px),
+                     radial-gradient(circle at 90% 85%, rgba(200,57,43,.08) 0 150px, transparent 151px);
+  }
+  header{
+    background:linear-gradient(135deg,var(--red),#a52a1e); color:#fff;
+    text-align:center; padding:20px 12px 16px; box-shadow:0 3px 10px rgba(0,0,0,.15);
+  }
+  header h1{font-size:1.6rem; letter-spacing:6px;}
+  header p{opacity:.9; margin-top:5px; font-size:.92rem;}
+  main{max-width:880px; margin:0 auto; padding:16px 14px 40px;}
+
+  /* 关卡地图 */
+  .levels{display:flex; gap:14px; justify-content:center; margin:20px 0 24px; flex-wrap:wrap;}
+  .level-card{
+    background:var(--card); border:2px solid var(--gold); border-radius:14px;
+    padding:14px 18px; width:250px; text-align:center; cursor:pointer;
+    transition:.2s; box-shadow:0 3px 8px rgba(0,0,0,.08); position:relative;
+  }
+  .level-card:hover{transform:translateY(-4px);}
+  .level-card.locked{opacity:.45; cursor:not-allowed;}
+  .level-card h2{font-size:1.02rem; color:var(--red);}
+  .level-card .num{font-size:1.7rem; font-weight:bold; color:var(--gold);}
+  .level-card small{color:#8a7a6d;}
+  .level-card .badge{position:absolute; top:-10px; right:-10px; background:var(--green);
+    color:#fff; border-radius:50%; width:26px; height:26px; line-height:26px;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .panel-title{text-align:center; font-size:1.25rem; color:var(--red); margin-bottom:4px;}
+  .panel-sub{text-align:center; color:#8a7a6d; font-size:.88rem; margin-bottom:14px; line-height:1.6;}
+
+  /* 分层标签 */
+  .tier-tab{
+    display:flex; gap:10px; justify-content:center; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .tier-tab button{
+    border:2px solid var(--gold); background:#fff; border-radius:20px;
+    padding:8px 20px; font-size:.95rem; cursor:pointer; font-family:inherit;
+  }
+  .tier-tab button.active-tier{background:var(--gold); color:#fff; font-weight:bold;}
+  .tier-tab button.finished::after{content:" ✔"; color:var(--green); font-weight:bold;}
+  .tier-tab button.active-tier.finished::after{color:#fff;}
+  .tier-note{
+    text-align:center; font-size:.85rem; color:#8a7a6d; margin-bottom:12px;
+    background:#fff8e8; border:1px dashed var(--gold); border-radius:8px; padding:8px 12px;
+  }
+
+  /* 题目卡 */
+  .qcard{
+    background:var(--card); border-radius:12px; border:1px solid #eaddc8;
+    padding:14px 16px; margin-bottom:14px; box-shadow:0 2px 6px rgba(0,0,0,.05);
+  }
+  .qcard .qno{color:var(--gold); font-weight:bold; margin-right:6px;}
+  .qtext{font-size:1.02rem; font-weight:bold; margin-bottom:8px; line-height:1.55;}
+  .hint-line{font-size:.85rem; color:var(--blue); margin-bottom:8px;}
+  input[type=text], textarea{
+    width:100%; padding:10px 12px; border:2px solid #e3d5bd; border-radius:8px;
+    font-size:1rem; font-family:inherit; background:#fff;
+  }
+  textarea{min-height:56px; resize:vertical;}
+  input:focus, textarea:focus{outline:none; border-color:var(--gold);}
+  .row{display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;}
+  button{
+    border:none; border-radius:8px; padding:9px 16px; font-size:.92rem;
+    cursor:pointer; font-family:inherit; transition:.15s;
+  }
+  .btn-main{background:var(--red); color:#fff;}
+  .btn-main:hover{background:#a52a1e;}
+  .btn-ghost{background:#f0e6d2; color:#7a6a55;}
+  /* 自评 */
+  .ref-ans{
+    display:none; margin-top:10px; background:#f4fbf6; border:1px solid #bfe0cd;
+    border-radius:8px; padding:10px 12px; font-size:.95rem; line-height:1.6;
+  }
+  .ref-ans b{color:var(--green);}
+  .selfcheck{display:none; margin-top:10px; gap:10px; flex-wrap:wrap;}
+  .btn-right{background:var(--green); color:#fff;}
+  .btn-fix{background:#e8956d; color:#fff;}
+  .selfmark{display:none; margin-top:8px; font-weight:bold;}
+  .selfmark.ok{display:block; color:var(--green);}
+  .selfmark.fix{display:block; color:#c8682b;}
+
+  /* 重组句子 */
+  .word{
+    display:inline-block; background:#fff; border:2px solid var(--gold);
+    border-radius:8px; padding:7px 13px; margin:5px; cursor:pointer; font-size:.98rem;
+    user-select:none; transition:.15s;
+  }
+  .word:hover{background:#fdf1d7;}
+  .word.used{opacity:.3; pointer-events:none;}
+  .answer-slot{
+    min-height:50px; background:#fff; border:2px dashed #d9c9a8; border-radius:10px;
+    padding:6px; margin-bottom:8px;
+  }
+  .slot-word{
+    display:inline-block; background:#fdeee0; border:1px solid var(--red);
+    border-radius:8px; padding:6px 11px; margin:4px; cursor:pointer; font-size:.98rem;
+  }
+
+  /* 成绩单 */
+  #scoreFab{
+    position:fixed; right:18px; bottom:18px; z-index:50;
+    background:var(--red); color:#fff; border-radius:30px; padding:13px 22px;
+    font-size:1rem; box-shadow:0 4px 14px rgba(200,57,43,.45); border:none; cursor:pointer;
+  }
+  #scoreFab:hover{background:#a52a1e;}
+  .modal-bg{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:60;
+    align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-bg.show{display:flex;}
+  .modal{
+    background:var(--card); border-radius:16px; border:3px solid var(--gold);
+    max-width:480px; width:100%; padding:24px; position:relative; max-height:85vh; overflow:auto;
+  }
+  .modal h3{color:var(--red); text-align:center; margin-bottom:14px; font-size:1.25rem;}
+  .modal table{width:100%; border-collapse:collapse; font-size:.95rem;}
+  .modal td, .modal th{padding:9px 8px; border-bottom:1px solid #eee0c8; text-align:left;}
+  .modal th{color:var(--gold);}
+  .modal .total-row td{font-weight:bold; color:var(--red); border-top:2px solid var(--gold);}
+  .modal .close-x{
+    position:absolute; top:10px; right:14px; background:none; font-size:1.3rem;
+    color:#8a7a6d; cursor:pointer; border:none;
+  }
+  .ctrl{text-align:center; margin-top:18px;}
+  .btn-back{background:#eee4d2; color:#6b5a4c;}
+  .confetti{position:fixed; top:-10px; font-size:22px; animation:fall 3s linear; pointer-events:none; z-index:99;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(360deg);}}
+  .final{text-align:center; background:var(--card); border:3px solid var(--gold);
+    border-radius:16px; padding:36px 20px; margin-top:30px;}
+  .final h2{color:var(--red); font-size:1.5rem; margin-bottom:10px;}
+  .star{font-size:1.8rem; color:var(--gold); margin:0 3px;}
+</style>
+</head>
+<body>
+<header style="position:relative">
+  <a href="index.html" style="position:absolute; left:14px; top:14px; background:rgba(255,255,255,.2); color:#fff; text-decoration:none; padding:6px 14px; border-radius:20px; font-size:.9rem;">🏠 回到主页</a>
+  <h1>🏮 节日美食 · 闯关大挑战 🏮</h1>
+  <p>每一关都有「基础层 A」和「进阶层 B」两个分层 · 对照参考答案自己打分 · 随时点右下角查看成绩单</p>
+  <p style="margin-top:8px; font-size:.9rem; background:rgba(255,255,255,.15); display:inline-block; padding:6px 14px; border-radius:20px;">
+    🇬🇧 <b>How to play:</b> Level 1 = Translate the sentences into English · Level 2 = Answer the questions · Level 3 = Put the words in the right order. Each level has <b>Part A (easier)</b> and <b>Part B (harder)</b>. Write your answer, click <b>📖 对照答案 (Check the answer)</b>, compare by yourself, then click <b>✅ I got it right</b> to score. Click <b>📊 我的成绩单 (My Score Card)</b> at the bottom-right any time to see your score. Finish A and B of each level to unlock the next one!
+  </p>
+</header>
+<main>
+  <div class="levels">
+    <div class="level-card" id="card1" onclick="openLevel(1)">
+      <div class="num">第一关</div>
+      <h2>🥟 小小翻译官</h2>
+      <small>A 带提示翻译 · B 独立翻译</small>
+    </div>
+    <div class="level-card" id="card2" onclick="openLevel(2)">
+      <div class="num">第二关</div>
+      <h2>🧧 问答高手</h2>
+      <small>A 找课文答案 · B 细节理解</small>
+    </div>
+    <div class="level-card" id="card3" onclick="openLevel(3)">
+      <div class="num">第三关</div>
+      <h2>🏮 句子魔法师</h2>
+      <small>A 短句重组 · B 长句重组</small>
+    </div>
+  </div>
+
+  <!-- 第一关 -->
+  <section class="panel" id="panel1">
+    <h2 class="panel-title">🥟 第一关：小小翻译官</h2>
+    <p class="panel-sub">写出英文翻译 → 点「提交检查」。系统会检查：① <b>关键意思</b>是否译全（如“最重要”不能写成 very important）；② <b>语法</b>是否正确。两点都对才算通过。</p>
+    <div class="tier-tab">
+      <button id="tab1A" class="active-tier" onclick="showTier(1,'A')">基础层 A（3 句·有提示）</button>
+      <button id="tab1B" onclick="showTier(1,'B')">进阶层 B（3 句·无提示）</button>
+    </div>
+    <div class="tier-note" id="tierNote1">💡 基础层：下面有英文关键词提示，照着提示写完整句子。</div>
+    <div id="tListA" class="tierbox"></div>
+    <div id="tListB" class="tierbox" style="display:none"></div>
+    <div class="ctrl"><button class="btn-back" onclick="backToMap()">⬅ 返回关卡地图</button></div>
+  </section>
+
+  <!-- 第二关 -->
+  <section class="panel" id="panel2">
+    <h2 class="panel-title">🧧 第二关：问答高手</h2>
+    <p class="panel-sub">先自己写答案 → 点「对照答案」→ 自己判断对不对，给自己打分。</p>
+    <div class="tier-tab">
+      <button id="tab2A" class="active-tier" onclick="showTier(2,'A')">基础层 A（课文里找得到）</button>
+      <button id="tab2B" onclick="showTier(2,'B')">进阶层 B（要自己说一说）</button>
+    </div>
+    <div class="tier-note" id="tierNote2">💡 基础层：答案就在课文里，找一找原句。</div>
+    <div id="qListA" class="tierbox"></div>
+    <div id="qListB" class="tierbox" style="display:none"></div>
+    <div class="ctrl"><button class="btn-back" onclick="backToMap()">⬅ 返回关卡地图</button></div>
+  </section>
+
+  <!-- 第三关 -->
+  <section class="panel" id="panel3">
+    <h2 class="panel-title">🏮 第三关：句子魔法师</h2>
+    <p class="panel-sub">点击词语排成正确的句子 → 点「对照答案」→ 自己检查顺序对不对，给自己打分。</p>
+    <div class="tier-tab">
+      <button id="tab3A" class="active-tier" onclick="showTier(3,'A')">基础层 A（短句）</button>
+      <button id="tab3B" onclick="showTier(3,'B')">进阶层 B（长句）</button>
+    </div>
+    <div class="tier-note" id="tierNote3">💡 基础层：每个句子只有 3 个词块，容易一点。</div>
+    <div id="rListA" class="tierbox"></div>
+    <div id="rListB" class="tierbox" style="display:none"></div>
+    <div class="ctrl"><button class="btn-back" onclick="backToMap()">⬅ 返回关卡地图</button></div>
+  </section>
+
+  <!-- 通关 -->
+  <section class="panel" id="panelFinal">
+    <div class="final">
+      <h2>🎉 恭喜通关全部六层！</h2>
+      <div id="finalStars"></div>
+      <p id="finalScore"></p>
+      <p>你已经是合格的「年夜大厨」啦！Grand Master Chef!</p>
+      <p style="margin-top:14px">
+        <button class="btn-main" onclick="openScoreModal(true)">📊 查看成绩单</button>
+        <button class="btn-ghost" onclick="location.reload()">🔄 再玩一次</button>
+      </p>
+    </div>
+  </section>
+</main>
+
+<!-- 成绩单 -->
+<button id="scoreFab" onclick="openScoreModal()">📊 我的成绩单 · My Score Card</button>
+<div class="modal-bg" id="scoreModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeScoreModal()">✕</button>
+    <h3>📊 我的成绩单</h3>
+    <table>
+      <tr><th>关卡</th><th>满分</th><th>自评得分</th><th>状态</th></tr>
+      <tr><td>第一关 A</td><td>10</td><td id="m1A">0</td><td id="s1A">未开始</td></tr>
+      <tr><td>第一关 B</td><td>15</td><td id="m1B">0</td><td id="s1B">未开始</td></tr>
+      <tr><td>第二关 A</td><td>25</td><td id="m2A">0</td><td id="s2A">未开始</td></tr>
+      <tr><td>第二关 B</td><td>25</td><td id="m2B">0</td><td id="s2B">未开始</td></tr>
+      <tr><td>第三关 A</td><td>10</td><td id="m3A">0</td><td id="s3A">未开始</td></tr>
+      <tr><td>第三关 B</td><td>15</td><td id="m3B">0</td><td id="s3B">未开始</td></tr>
+      <tr class="total-row"><td>总分</td><td>100</td><td id="mTotal">0</td><td id="sGrade">—</td></tr>
+    </table>
+    <p style="margin-top:12px; font-size:.85rem; color:#8a7a6d; text-align:center;">
+      分数由你自己对照参考答案评定：做对了记满分，改对后也可以重新给自己打分。
+    </p>
+    <div style="text-align:center; margin-top:8px;">
+      <button class="btn-main" onclick="saveGameRecord(); copyGameSummary();">📋 复制我的成绩（发给老师）</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 数据结构：每关 A/B 两个分层 */
+const DATA = {
+  t1: {tier:'A', level:1, pts:10, list:[
+    {zh:"中国人觉得吃是最重要的事情。", hint:"提示：think / eating / the most important thing", ans:"Chinese people think (that) eating is the most important thing."},
+    {zh:"在不同的节日，人们吃特别的食物。", hint:"提示：on different festivals / people / special food", ans:"On different festivals, people eat special food."},
+    {zh:"鱼代表年年有余。", hint:"提示：fish / means / surplus (nian nian you yu)", ans:"Fish means (nian nian you yu) — surplus year after year."}
+  ]},
+  t2: {tier:'B', level:1, pts:15, list:[
+    {zh:"很多中国菜的名字都有好运气（的）意思。", hint:"", ans:"The names of many Chinese dishes have the meaning of good luck."},
+    {zh:"除夕是一年里最特别的一天。", hint:"", ans:"New Year's Eve is the most special day of the year."},
+    {zh:"我希望今年过年可以和您一起庆祝。", hint:"", ans:"I hope I can celebrate the New Year with you this year."}
+  ]},
+  q1: {tier:'A', level:2, pts:25, list:[
+    {q:"这封信是写给谁的？", ans:"这封信是写给奶奶的。"},
+    {q:"作者问奶奶的第一个问题是什么？", ans:"“您好！身体好吗？”——第一个问题是问奶奶身体好吗。"},
+    {q:"在中文课上，他们现在做什么？", ans:"他们现在在中文课学习《节日美食》。"},
+    {q:"奶奶告诉过“我”什么？", ans:"奶奶告诉过“我”：中国人觉得吃是最重要的事情。"},
+    {q:"什么时候人们吃特别的食物？", ans:"在不同的节日，人们吃特别的食物。"},
+    {q:"每年的农历除夕，我们一起做什么？", ans:"每年的农历除夕，我们一起吃“年夜饭”。"},
+    {q:"哪一天是一年最特别的一天？", ans:"除夕是一年里最特别的一天。"},
+    {q:"鱼代表什么？", ans:"鱼代表“年年有余”。"},
+    {q:"谁说鱼代表年年有余？", ans:"老师（说），鱼代表年年有余。"},
+    {q:"全盒里有什么？", ans:"全盒里有糖果和巧克力。"},
+    {q:"这封信是谁写的？", ans:"这封信是孙子安安写的。"},
+    {q:"“你会准备一个全盒。”——你是谁？", ans:"“你”是奶奶——是奶奶在“我”拜年的时候准备全盒。"}
+  ]},
+  q2: {tier:'B', level:2, pts:25, list:[
+    {q:"人们怎么庆祝节日？", ans:"人们吃特别的食物来庆祝节日。"},
+    {q:"很多中国菜都有什么意思？为什么？", ans:"很多中国菜的名字都有好运气（的）意思，因为希望新年有好运气。"},
+    {q:"人们为什么要吃有特别意思的食物？", ans:"因为希望新年有好运气，所以人们要吃有特别意思的食物。"},
+    {q:"除夕怎么样？", ans:"除夕是一年里最特别的一天。"},
+    {q:"在除夕，谁会和家人团圆？", ans:"所有的中国人都和家人团圆。"},
+    {q:"在除夕，所有的中国人都和家人做什么？", ans:"在除夕，所有的中国人都和家人团圆（一起吃年夜饭）。"},
+    {q:"什么时候人们常吃鱼和饺子？", ans:"年夜饭的时候，人们常常吃鱼和饺子。"},
+    {q:"“交子”是晚上几点钟？", ans:"交子是晚上十二点。"},
+    {q:"除夕吃饺子代表什么？", ans:"除夕吃饺子也代表到了新年的意思。"},
+    {q:"老师跟我们说什么？", ans:"老师告诉我们：以前人们在家吃年夜饭庆祝新年，现在越来越多的人（会）在饭店里吃年夜饭。"},
+    {q:"以前大家都在哪里吃年夜饭？现在呢？", ans:"以前大家在家吃年夜饭，现在越来越多的人在饭店里吃年夜饭。"},
+    {q:"在饭店吃年夜饭好吗？为什么？", ans:"好。饭店吃年夜饭有很多好处：第一，环境干净；第二，有很多好的选择，所以大家都会觉得满意。"}
+  ]},
+  r1: {tier:'A', level:3, pts:10, list:[
+    {words:["在不同的节日，","人们吃特别的食物","庆祝节日。"]},
+    {words:["因为希望新年有好运气，","所以人们","要吃有特别意思的食物。"]},
+    {words:["每年的农历除夕，","我们一起","吃“年夜饭”。"]}
+  ]},
+  r2: {tier:'B', level:3, pts:15, list:[
+    {words:["饺子和交子的读音一样，","交子是晚上十二点，","所以除夕吃饺子，","也代表到了新年的意思。"]},
+    {words:["饭店吃年夜饭有很多好处：","第一，环境干净，","第二，有很多好的选择，","所以大家都会觉得满意。"]},
+    {words:["老师告诉我们，","以前人们在家吃年夜饭庆祝新年，","现在越来越多的人在饭店里吃年夜饭。"]}
+  ]}
+};
+const KEYS = Object.keys(DATA);
+
+const state = {};   // 每个分层: {revealed:[bool], self:[0|1|2], done:false}
+KEYS.forEach(k=>{ state[k]={revealed:DATA[k].list.map(()=>false), self:DATA[k].list.map(()=>0), done:false}; });
+
+const unlocked = {1:true, 2:true, 3:true};
+const tierDone = {}; // "1A" etc
+function tierDoneKey(k){ return DATA[k].level + DATA[k].tier; }
+
+/* 翻译判定：
+   must   —— 必须命中的意思组（组内任一命中即可）
+   forbid —— 出现即扣分/判错的表达（做了"近义代替但意思不到位"的检查）
+   grammar—— 该句中容易出现、必须指出来的语法问题 */
+const T_RULES = {
+  "t1_0": {
+    must: [
+      ["chinese","china","chinese people","中国人"],
+      ["think","thinks","believe","believes","feel","feels","consider","thought"],
+      ["eat","eating","food","diet","吃"],
+      ["most important","the most important","most significance","最重要","头等重要"]
+    ],
+    forbid: [
+      {re:/\bvery important\b|\breally important\b|\bquite important\b/i,
+       msg:'“很重要”≠“最重要”。中文是「最重要的事情」，英文要用 <b>the most important</b>，不能用 very/really important。'}
+    ],
+    grammar: [
+      {re:/\bchinese\s+thinks\b|\bchina\s+thinks\b|\bchinese\s+people\s+thinks\b/i,
+       msg:'主谓一致：Chinese people 是复数，动词用 <b>think</b>，不用 thinks。'},
+      {re:/(?<!the )\bchinese\b(?!\s+(people|person))/i,
+       msg:'Chinese 作“中国人”讲时是形容词/集合名词，单说 Chinese 作主语不自然；应写 <b>Chinese people</b>，或 <b>The Chinese</b>。'},
+      {re:/\bthink(s)?\s+(eat|have|is important)\b/i,
+       msg:'think 后面接句子时要用 <b>think (that) eating is ...</b> 这样的完整结构，不能直接 think + 动词原形。'},
+      {re:/\bthink(s)?\b\s*$/i,
+       msg:'think 后面缺了内容，句子不完整，应为 <b>think (that) ... is ...</b>。'}
+    ],
+    tip: "需要表达：① 中国人 ② 认为/觉得 ③ 吃（吃饭这件事）④ <b>最重要（the most important）</b>"
+  },
+  "t1_1": {
+    must: [
+      ["festival","festivals","holiday","holidays","节日"],
+      ["people","they","chinese"],
+      ["eat","have","enjoy","吃"],
+      ["special","different","特别"]
+    ],
+    grammar: [
+      {re:/\bfestival\b(?!s)/i, msg:'“在不同的节日”是复数概念，用 <b>festivals</b> 更准确。'},
+      {re:/\bpeoples\b/i, msg:'people 本身就是复数，不用 peoples。'},
+      {re:/\beats\b/i, msg:'主语 people 是复数，动词用 <b>eat</b>。'}
+    ],
+    tip: "需要表达：① 在（不同的）节日 ② 人们 ③ 吃 ④ 特别的食物"
+  },
+  "t1_2": {
+    must: [
+      ["fish","鱼"],
+      ["mean","means","symbolize","symbolizes","represent","represents","stand for","stands for","代表"],
+      ["surplus","abundance","plenty","extra","more than enough","leftover","年年有余","enough"]
+    ],
+    grammar: [
+      {re:/\bfishs\b|\bfishes means\b/i, msg:'fish 的复数是 fish（或 fishes，指不同种类），这里作主语单数用 <b>Fish means</b>。'},
+      {re:/\bmean\b(?!s)/i, msg:'主语 Fish 是第三人称单数，动词要加 s：<b>means</b>。'}
+    ],
+    tip: "需要表达：① 鱼 ② 代表/意思是 ③ 年年有余（有剩余/富足）"
+  },
+  "t2_0": {
+    must: [
+      ["names","name","菜名"],
+      ["chinese","china","dish","dishes","food","菜"],
+      ["meaning","mean","means","luck","lucky","fortune","good luck","意思","好运"],
+      ["good luck","lucky","fortune","luck","好运"]
+    ],
+    grammar: [
+      {re:/\bname of many\b/i, msg:'“很多中国菜的名字”应说 <b>the names of many Chinese dishes</b>（names 用复数）。'},
+      {re:/\bhave meaning\b|\bhas meaning\b/i, msg:'“有意思”要加冠词：<b>have the meaning of</b>。'}
+    ],
+    tip: "需要表达：① 很多中国菜的名字 ② 有好运气（好运）的意思"
+  },
+  "t2_1": {
+    must: [
+      ["new year's eve","new year eve","chuxi","eve","除夕"],
+      ["most special","the most special","special-est","最特别"],
+      ["day","日","天"],
+      ["year","years","一年"]
+    ],
+    forbid: [
+      {re:/\b(?<!most\s)special\b/i,
+       msg:'“最特别”必须译出 <b>the most special</b>；只说 special（特别）不够。'}
+    ],
+    grammar: [
+      {re:/(?<!the )\bmost special\b/i, msg:'“最特别”前面要加 the：<b>the most special day</b>。'},
+      {re:/\bnew year eve\b/i, msg:'“除夕”是 <b>New Year\'s Eve</b>，别忘了所有格 \'s。'}
+    ],
+    tip: "需要表达：① 除夕 ② 是 ③ 一年里最特别的一天（the most special day）"
+  },
+  "t2_2": {
+    must: [
+      ["hope","wish","希望"],
+      ["celebrate","celebration","spend","庆祝","过"],
+      ["you","with you","您","你"],
+      ["year","new year","this year","今年"]
+    ],
+    grammar: [
+      {re:/\bhope\s+(i\s+)?can\s+to\b|\bhope\s+to\s+celebrate\s+with\s+you/i,
+       msg:'hope 后面接从句用 <b>I hope (that) I can celebrate ...</b>；hope to do 也可以，但不能再加 can。'},
+      {re:/\bwith you together\b/i, msg:'with you 和 together 重复，二选一即可。'}
+    ],
+    tip: "需要表达：① 我希望 ② 今年过年 ③ 和您一起 ④ 庆祝"
+  }
+};
+
+/* 常见凑数/无意义输入检测 */
+function isNonsense(s){
+  if(s.length<4) return true;
+  if(/^[a-z]{1,3}$/i.test(s)) return true;
+  const junk=["i don't know","idk","abc","test","asdf","xxx","nothing","no idea","不知道","123","哈哈哈"];
+  const low=" "+s.toLowerCase()+" ";
+  if(junk.some(j=>low.includes(j))) return true;
+  // 若几乎没有英文单词（少于3个字母词）也视为无效
+  const words=s.match(/[a-z']+/gi)||[];
+  if(words.length<3) return true;
+  return false;
+}
+
+/* ---------- 构建 ---------- */
+function buildTranslation(key){
+  const d = DATA[key], box = document.getElementById('tList'+d.tier);
+  box.innerHTML = d.list.map((t,i)=>`
+    <div class="qcard">
+      <div class="qtext"><span class="qno">${i+1}.</span>${t.zh}</div>
+      ${t.hint?`<div class="hint-line">${t.hint}</div>`:''}
+      <textarea id="in_${key}_${i}" placeholder="Type your English translation here..." oninput="clearTMsg('${key}',${i})"></textarea>
+      <div class="row">
+        <button class="btn-main" onclick="checkT('${key}',${i})">✔ 提交检查 Check</button>
+        <button class="btn-ghost" onclick="showTRef('${key}',${i})">📖 看参考答案</button>
+      </div>
+      <div class="ref-ans" id="ref_${key}_${i}"><b>参考答案 / Answer:</b>${t.ans}</div>
+      <div class="selfmark" id="sm_${key}_${i}"></div>
+    </div>`).join('');
+}
+function buildQuestion(key){
+  const d = DATA[key], box = document.getElementById('qList'+d.tier);
+  box.innerHTML = d.list.map((t,i)=>`
+    <div class="qcard">
+      <div class="qtext"><span class="qno">${i+1}.</span>${t.q}</div>
+      <textarea id="in_${key}_${i}" placeholder="写出你的答案..."></textarea>
+      <div class="row">
+        <button class="btn-main" onclick="reveal('${key}',${i})">📖 对照答案 Check the answer</button>
+      </div>
+      <div class="ref-ans" id="ref_${key}_${i}"><b>参考答案 / Answer:</b>${t.ans}</div>
+      <div class="selfcheck" id="sc_${key}_${i}">
+        <span style="font-size:.9rem; color:#8a7a6d;">和参考答案比一比 / Compare with the answer:</span>
+        <button class="btn-right" onclick="selfMark('${key}',${i},1)">✅ 我做对了 I got it right</button>
+        <button class="btn-fix" onclick="selfMark('${key}',${i},2)">✏️ 我要再改改 Let me try again</button>
+      </div>
+      <div class="selfmark" id="sm_${key}_${i}"></div>
+    </div>`).join('');
+}
+function buildRebuild(key){
+  const d = DATA[key], box = document.getElementById('rList'+d.tier);
+  box.innerHTML = '';
+  d.list.forEach((r,i)=>{
+    let shuffled=[...r.words];
+    do{ shuffled.sort(()=>Math.random()-0.5);}while(shuffled.join('')===r.words.join(''));
+    const card=document.createElement('div');
+    card.className='qcard';
+    card.innerHTML=`
+      <div class="qtext"><span class="qno">${i+1}.</span>把词语排成正确的句子：</div>
+      <div class="answer-slot" id="slot_${key}_${i}"></div>
+      <div id="pool_${key}_${i}"></div>
+      <div class="row"><button class="btn-main" onclick="revealR('${key}',${i})">📖 对照答案 Check the answer</button></div>
+      <div class="ref-ans" id="ref_${key}_${i}"><b>正确句子 / Correct sentence:</b>${r.words.join('')}</div>
+      <div class="selfcheck" id="sc_${key}_${i}">
+        <span style="font-size:.9rem; color:#8a7a6d;">和正确句子比一比 / Compare with the answer:</span>
+        <button class="btn-right" onclick="selfMark('${key}',${i},1)">✅ 我排对了 I got it right</button>
+        <button class="btn-fix" onclick="selfMark('${key}',${i},2)">✏️ 我要再排排 Let me try again</button>
+      </div>
+      <div class="selfmark" id="sm_${key}_${i}"></div>`;
+    box.appendChild(card);
+    const pool=card.querySelector('#pool_'+key+'_'+i);
+    shuffled.forEach(w=>{
+      const s=document.createElement('span');
+      s.className='word'; s.textContent=w;
+      s.onclick=()=>{
+        const slot=document.getElementById('slot_'+key+'_'+i);
+        const t=document.createElement('span');
+        t.className='slot-word'; t.textContent=w;
+        t.onclick=()=>{t.remove(); s.classList.remove('used');};
+        slot.appendChild(t); s.classList.add('used');
+      };
+      pool.appendChild(s);
+    });
+  });
+}
+
+/* ---------- 揭示答案 + 自评 ---------- */
+function reveal(key,i){
+  state[key].revealed[i]=true;
+  document.getElementById('ref_'+key+'_'+i).style.display='block';
+  const sc=document.getElementById('sc_'+key+'_'+i);
+  if(sc) sc.style.display='flex';
+  refreshUI();
+}
+function revealR(key,i){ reveal(key,i); }
+function selfMark(key,i,val){
+  state[key].self[i]=val;
+  const sm=document.getElementById('sm_'+key+'_'+i);
+  if(val===1){ sm.className='selfmark ok'; sm.textContent='👏 好样的！这题记满分。'; }
+  else{ sm.className='selfmark fix'; sm.textContent='💪 没关系！改一改，再点「我做对了」也可以拿满分。'; }
+  refreshUI();
+}
+
+/* ---------- 第一关：系统判定翻译（意思对才算对） ---------- */
+function clearTMsg(key,i){
+  const sm=document.getElementById('sm_'+key+'_'+i);
+  if(sm && state[key].self[i]===1){ /* 已得分不自动清空 */ return; }
+  if(sm){ sm.className='selfmark'; sm.textContent=''; }
+  if(state[key].self[i]===1) state[key].self[i]=0;
+  refreshUI();
+}
+function checkT(key,i){
+  const rule = T_RULES[key+'_'+i];
+  const raw = document.getElementById('in_'+key+'_'+i).value.trim();
+  const sm = document.getElementById('sm_'+key+'_'+i);
+  const clean = raw.toLowerCase().replace(/[.,!?;:，。！？；：]/g,' ').replace(/\s+/g,' ');
+  const low = ' ' + clean + ' ';
+
+  if(!raw){
+    sm.className='selfmark fix';
+    sm.textContent='✏️ 请先写出你的英文翻译。';
+    return;
+  }
+  if(isNonsense(raw)){
+    sm.className='selfmark fix';
+    sm.textContent='❌ 这还不是一句完整的英文翻译。请用完整的英文句子表达中文的意思。';
+    state[key].self[i]=0; refreshUI(); return;
+  }
+
+  /* 1) 意思要点是否全部译到 */
+  const miss = (rule.must||[]).filter(g => !g.some(k => low.includes(k.toLowerCase())));
+  /* 2) 是否有"意思不到位"的表达（如 very important 顶替 the most important） */
+  const bad = (rule.forbid||[]).filter(f => f.re.test(raw));
+  /* 3) 语法问题 */
+  const gram = (rule.grammar||[]).filter(g => g.re.test(raw));
+
+  const gramHtml = gram.length
+    ? '<div style="margin-top:6px; padding-top:6px; border-top:1px dashed #e0a878;">🔍 <b>语法提醒：</b><ul style="margin:6px 0 0 18px;">'
+      + gram.map(g=>'<li>'+g.msg+'</li>').join('') + '</ul></div>'
+    : '';
+
+  if(miss.length===0 && bad.length===0){
+    if(gram.length){
+      /* 意思对了，但有语法问题：判为"意思对，语法需订正"，不给分 */
+      sm.className='selfmark fix';
+      sm.innerHTML='⚠️ 意思译对了，但句子有语法问题，改好之后再提交一次才算通过。'+gramHtml
+        +'<div style="margin-top:6px;">✅ 参考：'+DATA[key].list[i].ans+'</div>';
+      document.getElementById('ref_'+key+'_'+i).style.display='block';
+      state[key].self[i]=0;
+    }else{
+      sm.className='selfmark ok';
+      sm.innerHTML='✅ 正确！意思和语法都对。（参考答案：'+DATA[key].list[i].ans+'）';
+      document.getElementById('ref_'+key+'_'+i).style.display='block';
+      state[key].self[i]=1; state[key].revealed[i]=true;
+    }
+  }else{
+    sm.className='selfmark fix';
+    let html='❌ 还不算正确，再改一改。<br>';
+    if(miss.length){
+      html += '👉 ' + (rule.tip || '关键意思没译到。');
+    }
+    if(bad.length){
+      html += '<div style="margin-top:6px;">⚠️ ' + bad.map(b=>b.msg).join('<br>') + '</div>';
+    }
+    html += gramHtml;
+    html += '<div style="margin-top:6px; color:#8a7a6d;">（可点「📖 看参考答案」对照，改好后重新提交。）</div>';
+    sm.innerHTML=html;
+    state[key].self[i]=0;
+  }
+  refreshUI();
+}
+function showTRef(key,i){
+  document.getElementById('ref_'+key+'_'+i).style.display='block';
+  state[key].revealed[i]=true; refreshUI();
+}
+
+/* ---------- 分层切换 ---------- */
+const TIER_NOTES = {
+  1:{A:"💡 基础层：下面有英文关键词提示，照着提示写完整句子。", B:"🔥 进阶层：没有提示，试着自己写出完整的英文翻译！"},
+  2:{A:"💡 基础层：答案就在课文里，找一找原句。", B:"🔥 进阶层：这些题要自己动脑筋说一说，答案要完整。"},
+  3:{A:"💡 基础层：每个句子只有 3 个词块，容易一点。", B:"🔥 进阶层：长句子有 3~4 个词块，要小心顺序！"}
+};
+function showTier(level,tier){
+  ['A','B'].forEach(t=>{
+    document.getElementById(`tab${level}${t}`).classList.toggle('active-tier', t===tier);
+    document.getElementById('tList'+t) && level===1 && (document.getElementById('tList'+t).style.display = (t===tier?'block':'none'));
+    document.getElementById('qList'+t) && level===2 && (document.getElementById('qList'+t).style.display = (t===tier?'block':'none'));
+    document.getElementById('rList'+t) && level===3 && (document.getElementById('rList'+t).style.display = (t===tier?'block':'none'));
+  });
+  document.getElementById('tierNote'+level).textContent = TIER_NOTES[level][tier];
+}
+
+/* ---------- 计分与解锁 ---------- */
+function calc(){
+  const r={};
+  let total=0;
+  KEYS.forEach(k=>{
+    const d=DATA[k], st=state[k];
+    const earned = st.self.reduce((s,v)=>s+(v===1?1:0),0);
+    const per = d.pts/d.list.length;
+    r[k]={earned:Math.round(earned*per*10)/10, done:earned===d.list.length, started:st.revealed.some(Boolean)};
+    total += r[k].earned;
+  });
+  r.total=Math.round(total*10)/10;
+  return r;
+}
+function refreshUI(){
+  const r=calc();
+  // 更新分层完成状态
+  KEYS.forEach(k=>{
+    const btn=document.getElementById('tab'+tierDoneKey(k));
+    if(btn){ btn.classList.toggle('finished', r[k].done); }
+  });
+  // 解锁逻辑：1A+1B 完成 → 解锁第2关；2A+2B → 第3关；3A+3B → 终极通关
+  if(r.t1.done && r.t2.done && !unlocked[2]){
+    unlocked[2]=true; document.getElementById('card2').classList.remove('locked');
+    setTimeout(()=>alert('🎉 第一关两个分层都通过了！解锁第二关：问答高手'),300);
+  }
+  if(unlocked[2] && r.q1.done && r.q2.done && !unlocked[3]){
+    unlocked[3]=true; document.getElementById('card3').classList.remove('locked');
+    setTimeout(()=>alert('🎉 第二关两个分层都通过了！解锁第三关：句子魔法师'),300);
+  }
+  if(unlocked[3] && r.r1.done && r.r2.done && !refreshUI.finished){
+    refreshUI.finished=true;
+    setTimeout(showFinal,400);
+  }
+  updateModal(r);
+  return r;
+}
+function showFinal(){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panelFinal').classList.add('active');
+  const r=calc();
+  const stars = r.total>=90?'⭐⭐⭐':r.total>=75?'⭐⭐':'⭐';
+  document.getElementById('finalStars').innerHTML='<span class="star">'+stars+'</span>';
+  document.getElementById('finalScore').textContent='最终得分：'+r.total+' / 100 分';
+  for(let i=0;i<40;i++){
+    const d=document.createElement('div');
+    d.className='confetti';
+    d.textContent=['🎉','🧧','🏮','🥟','🍊'][i%5];
+    d.style.left=Math.random()*100+'vw';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),5000);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------- 成绩单 ---------- */
+function updateModal(r){
+  const names={t1:'1A',t2:'1B',q1:'2A',q2:'2B',r1:'3A',r2:'3B'};
+  KEYS.forEach(k=>{
+    const id=names[k];
+    document.getElementById('m'+id).textContent=r[k].earned;
+    const s=document.getElementById('s'+id);
+    s.textContent = r[k].done?'✅ 完成':(r[k].started?'✏️ 进行中':'未开始');
+  });
+  document.getElementById('mTotal').textContent=r.total;
+  document.getElementById('sGrade').textContent = r.total>=90?'🏆 卓越':r.total>=75?'🥇 优秀':r.total>=50?'🥈 良好':'🥉 加油';
+}
+function openScoreModal(){ updateModal(calc()); document.getElementById('scoreModal').classList.add('show'); }
+function closeScoreModal(){ document.getElementById('scoreModal').classList.remove('show'); }
+document.getElementById('scoreModal').addEventListener('click',e=>{
+  if(e.target.id==='scoreModal') closeScoreModal();
+});
+
+/* ---------- 通用 ---------- */
+function openLevel(n){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel'+n).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function backToMap(){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ================= 成绩记录 ================= */
+const G_KEY='cnPractice_game_v1';
+function saveGameRecord(){
+  try{
+    const r=calc();
+    const name=(document.getElementById('studentName').value.trim()||'未署名');
+    const arr=JSON.parse(localStorage.getItem(G_KEY)||'[]');
+    arr.push({name:name, time:new Date().toLocaleString('zh-CN'), total:r.total,
+      detail:'1A:'+r.t1.earned+'/10 1B:'+r.t2.earned+'/15 2A:'+r.q1.earned+'/25 2B:'+r.q2.earned+'/25 3A:'+r.r1.earned+'/10 3B:'+r.r2.earned+'/15'});
+    localStorage.setItem(G_KEY, JSON.stringify(arr));
+  }catch(e){}
+}
+function buildGameSummary(){
+  const r=calc();
+  const name=(document.getElementById('studentName').value.trim()||'未署名');
+  return '🥟《节日美食》闯关成绩\n姓名：'+name+'\n时间：'+new Date().toLocaleString('zh-CN')
+    +'\n第一关A：'+r.t1.earned+'/10  第一关B：'+r.t2.earned+'/15'
+    +'\n第二关A：'+r.q1.earned+'/25  第二关B：'+r.q2.earned+'/25'
+    +'\n第三关A：'+r.r1.earned+'/10  第三关B：'+r.r2.earned+'/15'
+    +'\n总分：'+r.total+'/100\n（成绩由系统自动生成）';
+}
+function copyGameSummary(){
+  const t=buildGameSummary();
+  const done=()=>alert('✅ 成绩已复制！请粘贴发给老师。\n\n'+t);
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done).catch(()=>{fallbackCopy(t);done();}); }
+  else{ fallbackCopy(t); done(); }
+}
+function fallbackCopy(t){
+  const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta);
+  ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove();
+}
+buildTranslation('t1'); buildTranslation('t2');
+buildQuestion('q1'); buildQuestion('q2');
+buildRebuild('r1'); buildRebuild('r2');
+updateModal(calc());
+</script>
+</body>
+</html>

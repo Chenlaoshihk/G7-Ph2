@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>书信写作练习 · 闯关</title>
+<style>
+  :root{
+    --red:#c8392b; --gold:#e8a020; --bg:#fdf6ec; --ink:#3a2b22;
+    --green:#3f9d6e; --card:#fffdf8; --blue:#4a7fb5;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; padding-bottom:80px;}
+  header{background:linear-gradient(135deg,#2c6e9e,#1c4e78); color:#fff; text-align:center; padding:20px 12px 16px; box-shadow:0 3px 10px rgba(0,0,0,.15);}
+  header h1{font-size:1.55rem; letter-spacing:4px;}
+  header p{opacity:.9; margin-top:5px; font-size:.9rem;}
+  main{max-width:880px; margin:0 auto; padding:16px 14px 40px;}
+  .levels{display:flex; gap:14px; justify-content:center; margin:20px 0 24px; flex-wrap:wrap;}
+  .level-card{background:var(--card); border:2px solid var(--gold); border-radius:14px; padding:14px 18px; width:250px; text-align:center; cursor:pointer; transition:.2s; box-shadow:0 3px 8px rgba(0,0,0,.08); position:relative;}
+  .level-card:hover{transform:translateY(-4px);}
+  .level-card.locked{opacity:.45; cursor:not-allowed;}
+  .level-card h2{font-size:1rem; color:var(--red);}
+  .level-card .num{font-size:1.6rem; font-weight:bold; color:var(--gold);}
+  .level-card small{color:#8a7a6d;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .panel-title{text-align:center; font-size:1.2rem; color:var(--red); margin-bottom:4px;}
+  .panel-sub{text-align:center; color:#8a7a6d; font-size:.88rem; margin-bottom:14px; line-height:1.7;}
+  .qcard{background:var(--card); border-radius:12px; border:1px solid #eaddc8; padding:14px 16px; margin-bottom:14px; box-shadow:0 2px 6px rgba(0,0,0,.05);}
+  .qtext{font-size:1.02rem; font-weight:bold; margin-bottom:8px; line-height:1.55;}
+  .qno{color:var(--gold); font-weight:bold; margin-right:6px;}
+  .pattern-tag{display:inline-block; background:#e8f0fa; color:var(--blue); border:1px solid #b8d0ec; border-radius:6px; font-size:.82rem; padding:2px 8px; margin-left:6px; font-weight:normal;}
+  textarea{width:100%; min-height:64px; padding:10px 12px; border:2px solid #e3d5bd; border-radius:8px; font-size:1.05rem; font-family:inherit; background:#fff; line-height:1.7;}
+  textarea:focus{outline:none; border-color:var(--gold);}
+  .row{display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;}
+  button{border:none; border-radius:8px; padding:9px 16px; font-size:.92rem; cursor:pointer; font-family:inherit; transition:.15s;}
+  .btn-main{background:var(--red); color:#fff;}
+  .btn-main:hover{background:#a52a1e;}
+  .btn-ghost{background:#f0e6d2; color:#7a6a55;}
+  .feedback{margin-top:10px; font-size:.95rem; line-height:1.8;}
+  .feedback.ok{background:#e6f4ec; color:var(--green); border-radius:8px; padding:10px 12px;}
+  .feedback.no{background:#fbeae8; color:#a33; border-radius:8px; padding:10px 12px;}
+  .feedback.warn{background:#fdf3e0; color:#a06a12; border-radius:8px; padding:10px 12px;}
+  /* 错误标记 */
+  .marked-essay{background:#fff; border:2px solid #e3d5bd; border-radius:8px; padding:12px 14px; margin-top:10px; font-size:1.08rem; line-height:2; white-space:pre-wrap;}
+  .err-mark{background:#ffe3df; border-bottom:2px solid var(--red); padding:0 2px; border-radius:3px; font-weight:bold; cursor:help;}
+  .ok-mark{border-bottom:2px solid var(--green); padding:0 1px;}
+  .err-list{margin-top:10px;}
+  .err-item{background:#fff; border-left:4px solid var(--red); border-radius:6px; padding:8px 12px; margin-bottom:8px; font-size:.92rem; line-height:1.7;}
+  .err-item b{color:var(--red);}
+  /* 评分卡 */
+  .rubric{background:#fff; border:2px solid var(--gold); border-radius:12px; padding:16px; margin-top:12px;}
+  .rubric h3{color:var(--red); margin-bottom:8px;}
+  .rubric-row{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #eee0c8; font-size:.92rem;}
+  .rubric-row span:last-child{font-weight:bold;}
+  .band{font-size:1.3rem; font-weight:bold; color:var(--red); text-align:center; margin:8px 0;}
+  .band-desc{font-size:.85rem; color:#6b5a4c; line-height:1.7; background:#fdf6ec; border-radius:8px; padding:10px 12px;}
+  .ctrl{text-align:center; margin-top:18px;}
+  .btn-back{background:#eee4d2; color:#6b5a4c;}
+  .final{text-align:center; background:var(--card); border:3px solid var(--gold); border-radius:16px; padding:32px 20px;}
+  .final h2{color:var(--red); font-size:1.4rem; margin-bottom:8px;}
+  .star{font-size:1.7rem; color:var(--gold);}
+  .checklist{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
+  .checklist .chip{border-radius:16px; padding:4px 12px; font-size:.85rem; border:1px solid #ddd;}
+  .chip.on{background:#e6f4ec; color:var(--green); border-color:#bfe0cd;}
+  .chip.off{background:#f5f0e6; color:#a08a70;}
+  .count{font-size:.9rem; color:var(--blue); margin-top:4px;}
+</style>
+</head>
+<body>
+<header style="position:relative">
+  <a href="index.html" style="position:absolute; left:14px; top:14px; background:rgba(255,255,255,.2); color:#fff; text-decoration:none; padding:6px 14px; border-radius:20px; font-size:.9rem;">🏠 回到主页</a>
+  <h1>✉️ 书信写作练习 · 三关挑战</h1>
+  <p>第一关：翻译句子 → 第二关：用句型回答问题 → 第三关：写一封信（自动检查格式、句型、语法并打分）</p>
+  <div style="margin-top:10px;">
+    <input id="studentName" placeholder="✏️ 先在这里输入你的名字" style="padding:8px 14px; border-radius:20px; border:none; font-size:.95rem; width:240px;">
+  </div>
+</header>
+<main>
+  <div class="levels">
+    <div class="level-card" id="card1" onclick="openLevel(1)">
+      <div class="num">第一关</div>
+      <h2>🔄 翻译句子</h2>
+      <small>把英文句子翻译成中文（考查四个句型）</small>
+    </div>
+    <div class="level-card" id="card2" onclick="openLevel(2)">
+      <div class="num">第二关</div>
+      <h2>💬 用句型回答</h2>
+      <small>按指定句型回答问题</small>
+    </div>
+    <div class="level-card" id="card3" onclick="openLevel(3)">
+      <div class="num">第三关</div>
+      <h2>✍️ 写一封信</h2>
+      <small>格式 + 句型 + 语法 + 评分标准</small>
+    </div>
+  </div>
+
+  <!-- 第一关 -->
+  <section class="panel active" id="panel1">
+    <h2 class="panel-title">🔄 第一关：翻译句子（英 → 中）</h2>
+    <p class="panel-sub">把英文句子翻译成中文。系统检查你的句子里<b>有没有用上指定的句型</b>，句型没用到会被判错并提示。</p>
+    <div id="trList"></div>
+    <div class="ctrl"><button class="btn-back" onclick="backToMap()">⬅ 返回</button>
+      <button class="btn-ghost" onclick="copySummary()">📋 复制我的成绩（发给老师）</button>
+      <a href="index.html" class="btn-back" style="text-decoration:none; display:inline-block;">🏠 回到主页</a></div>
+  </section>
+
+  <!-- 第二关 -->
+  <section class="panel" id="panel2">
+    <h2 class="panel-title">💬 第二关：用指定句型回答问题</h2>
+    <p class="panel-sub">看清每题要求的句型，用它写出完整的回答。句型没用上会被判错。</p>
+    <div id="qaList"></div>
+    <div class="ctrl"><button class="btn-back" onclick="backToMap()">⬅ 返回</button>
+      <button class="btn-ghost" onclick="copySummary()">📋 复制我的成绩（发给老师）</button>
+      <a href="index.html" class="btn-back" style="text-decoration:none; display:inline-block;">🏠 回到主页</a></div>
+  </section>
+
+  <!-- 第三关 -->
+  <section class="panel" id="panel3">
+    <h2 class="panel-title">✍️ 第三关：写一封信</h2>
+    <div class="qcard">
+      <div class="qtext">📝 题目（IB writing prompt）</div>
+      <p style="line-height:2; font-size:1rem;">写一封信给你的<b>中文老师</b>，告诉她：<br>① 你们国家有哪些节日？<br>② 庆祝节日时有什么特别的菜？<br>③ 这些菜代表什么意思？</p>
+      <ul style="margin:8px 0 0 20px; line-height:2; color:#6b5a4c;">
+        <li>按照<b>信的格式</b>写（写信人／收信人／问候语／祝福语／自称／日期六个部分都要有）</li>
+        <li>字数要求：<b>100～150 个汉字</b></li>
+        <li>尽量用上课学过的句型：<b>越来越 / 和……一样 / 过 / 最 / 因为……所以</b></li>
+      </ul>
+    </div>
+    <div class="qcard">
+      <div class="qtext">✍️ 在这里写信：</div>
+      <textarea id="essay" style="min-height:220px;" placeholder="收信人：
+问候语……
+正文……
+祝
+祝福语……
+自称
+署名
+日期" oninput="liveCount()"></textarea>
+      <div class="count" id="charCount">汉字数：0（要求 100～150）</div>
+      <div class="checklist" id="formatChips"></div>
+      <div class="row">
+        <button class="btn-main" onclick="gradeEssay()">✔ 提交检查 Grade my letter</button>
+        <button class="btn-ghost" onclick="loadExample()">📑 看范文</button>
+      </div>
+      <div id="essayFeedback"></div>
+      <div id="markedBox"></div>
+      <div id="errListBox"></div>
+      <div id="rubricBox"></div>
+    </div>
+    <div class="ctrl"><button class="btn-back" onclick="backToMap()">⬅ 返回</button>
+      <button class="btn-ghost" onclick="copySummary()">📋 复制我的成绩（发给老师）</button>
+      <a href="index.html" class="btn-back" style="text-decoration:none; display:inline-block;">🏠 回到主页</a></div>
+  </section>
+
+  <!-- 通关 -->
+  <section class="panel" id="panelFinal">
+    <div class="final">
+      <h2>🎉 三关全部完成！</h2>
+      <div class="star">⭐⭐⭐</div>
+      <p id="finalMsg" style="margin-top:8px;"></p>
+      <p style="margin-top:12px;"><button class="btn-main" onclick="location.reload()">🔄 再练一次</button></p>
+    </div>
+  </section>
+</main>
+
+<script>
+const unlocked = {1:true,2:true,3:true};
+const done = {1:false,2:false,3:false};
+function openLevel(n){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel'+n).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function backToMap(){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+}
+function finishLevel(n,msg){
+  done[n]=true;
+  saveRecord({level:n, detail:buildSummary().split('\n').slice(2).join(' | ')});
+  alert('🎉 '+msg);
+  if(n===3){ showFinal(); }
+}
+function showFinal(){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panelFinal').classList.add('active');
+  document.getElementById('finalMsg').textContent='你完成了翻译、句型问答和书信写作，写作小达人！';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ================= 第一关：翻译 ================= */
+const TR = [
+  {en:"My cat is getting fatter and fatter.", need:["越来越"], tip:"要用句型「越来越」", ans:"我的猫越来越胖。"},
+  {en:"My book is the same as Xiao Wang's book.", need:["和","一样"], tip:"要用句型「和……一样」", ans:"我的书和小王的书一样。"},
+  {en:"I have been to China.", need:["去过"], tip:"要用「去过」（表示经历）", ans:"我去过中国。"},
+  {en:"Eating is the most important thing.", need:["最"], tip:"要用「最」", ans:"吃是最重要的事情。"},
+  {en:"Because I hope to have good luck, so I eat dumplings.", need:["因为","所以"], tip:"要用「因为……所以……」", ans:"因为我希望有好运气，所以我吃饺子。"}
+];
+function buildTR(){
+  document.getElementById('trList').innerHTML = TR.map((t,i)=>`
+    <div class="qcard">
+      <div class="qtext"><span class="qno">${i+1}.</span>${t.en}<span class="pattern-tag">句型：${t.need.join(' + ')}</span></div>
+      <textarea id="tri${i}" placeholder="用中文写出翻译..."></textarea>
+      <div class="row"><button class="btn-main" onclick="checkTR(${i})">✔ 检查</button></div>
+      <div class="feedback" id="trf${i}"></div>
+    </div>`).join('');
+}
+function checkTR(i){
+  const v=document.getElementById('tri'+i).value.trim();
+  const fb=document.getElementById('trf'+i);
+  if(!v){ fb.className='feedback no'; fb.textContent='请先写出翻译。'; return; }
+  const missing=TR[i].need.filter(p=>!v.includes(p));
+  if(missing.length===0){
+    fb.className='feedback ok';
+    fb.innerHTML='✅ 句型用对了！参考译文：'+TR[i].ans;
+    document.getElementById('tri'+i).disabled=true;
+  }else{
+    fb.className='feedback no';
+    fb.innerHTML='❌ 句子「'+missing.join('」「')+'」还没有用上。'+TR[i].tip+'。<br>参考译文：'+TR[i].ans;
+  }
+  if(TR.every((_,j)=>document.getElementById('trf'+j).classList.contains('ok'))){
+    if(!done[1]) finishLevel(1,'第一关通过！');
+  }
+}
+
+/* ================= 第二关：句型问答 ================= */
+const QA = [
+  {q:"用「越来越」说说你的城市或学校（1 句话）。", need:["越来越"], min:8, tip:"句子里要有「越来越 + 形容词/动词」"},
+  {q:"用「和……一样」比较你和你的朋友（1 句话）。", need:["和","一样"], min:8, tip:"句子里要有「和……一样」"},
+  {q:"用「过」说你做过的一件事情（比如去过哪里、吃过什么）。", need:["过"], min:6, tip:"句子里要有「动词 + 过」"},
+  {q:"用「最」说说你觉得最重要的东西或最喜欢的人。", need:["最"], min:6, tip:"句子里要有「最 + 形容词」"},
+  {q:"用「因为……所以……」说说你为什么喜欢吃一样东西。", need:["因为","所以"], min:10, tip:"句子里要有「因为」和「所以」"}
+];
+function buildQA(){
+  document.getElementById('qaList').innerHTML = QA.map((t,i)=>`
+    <div class="qcard">
+      <div class="qtext"><span class="qno">${i+1}.</span>${t.q}<span class="pattern-tag">必须用：${t.need.join(' + ')}</span></div>
+      <textarea id="qai${i}" placeholder="用中文写出你的回答..."></textarea>
+      <div class="row"><button class="btn-main" onclick="checkQA(${i})">✔ 检查</button></div>
+      <div class="feedback" id="qaf${i}"></div>
+    </div>`).join('');
+}
+function hanzi(s){ return (s.match(/[\u4e00-\u9fff]/g)||[]).length; }
+function checkQA(i){
+  const v=document.getElementById('qai'+i).value.trim();
+  const fb=document.getElementById('qaf'+i);
+  if(!v){ fb.className='feedback no'; fb.textContent='请先写出回答。'; return; }
+  const missing=QA[i].need.filter(p=>!v.includes(p));
+  const n=hanzi(v);
+  if(missing.length===0 && n>=QA[i].min){
+    fb.className='feedback ok';
+    fb.innerHTML='✅ 句型用对了，回答也够完整！';
+    document.getElementById('qai'+i).disabled=true;
+  }else if(missing.length>0){
+    fb.className='feedback no';
+    fb.innerHTML='❌ 句型「'+missing.join('」「')+'」没有用上。'+QA[i].tip;
+  }else{
+    fb.className='feedback no';
+    fb.innerHTML='❌ 句型用了，但回答太短（现在 '+n+' 个字，至少 '+QA[i].min+' 个字），再说完整一点。';
+  }
+  if(QA.every((_,j)=>document.getElementById('qaf'+j).classList.contains('ok'))){
+    if(!done[2]) finishLevel(2,'第二关通过！');
+  }
+}
+
+/* ================= 第三关：写作评分 ================= */
+const FORMAT_PARTS = [
+  {id:'salutation', name:'称呼（收信人，如：老师：）', test:s=>/(^|\n)\s*(老师|您好|^.{0,6}(老师|妈妈|奶奶|爷爷|爸爸))\s*[：:]/m.test(s)||/(^|\n)[^\n，。！？]{1,8}[：:]/.test(s)},
+  {id:'greeting', name:'问候语（如：您好！身体好吗？）', test:s=>/(您好|你好|身体好吗|最近好吗|早安|午安|晚上好)/.test(s)},
+  {id:'body', name:'正文（回答了节日、特别的菜、意思）', test:s=>/(节日|节)/.test(s)&&/(菜|吃|食物|饭)/.test(s)&&/(意思|代表|象征|表示)/.test(s)},
+  {id:'blessing', name:'祝福语（如：祝 身体健康！）', test:s=>/(祝|愿你|祝福)/.test(s)&&/(健康|快乐|顺利|好|进步|开心)/.test(s)},
+  {id:'signature', name:'自称 + 署名（如：你的学生 小明）', test:s=>{const tail=s.slice(-150); return /(你的|您的|爱你的|想你的|儿|孙子|孙女|学生)/.test(tail) && /\n[\u4e00-\u9fff]{2,4}\s*$|\n[\u4e00-\u9fff]{2,4}\s*\n/.test(tail);}},
+  {id:'date', name:'日期（如：2026年10月15日）', test:s=>/\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日/.test(s)}
+];
+const PATTERNS = [
+  {p:'越来越', re:s=>s.includes('越来越')},
+  {p:'和……一样', re:s=>/和[^。！？\n]{1,12}一样/.test(s)},
+  {p:'过（经历）', re:s=>/[\u4e00-\u9fff]过/.test(s)},
+  {p:'最', re:s=>s.includes('最')},
+  {p:'因为……所以', re:s=>s.includes('因为')&&s.includes('所以')}
+];
+/* 中文常见语法/用词错误检测 */
+const GRAMMAR_RULES = [
+  {re:/越来[月每]/g, msg:'“越来月/越来每”是错别字，应为「越来越」。'},
+  {re:/越来越\s*很/g, msg:'「越来越」后面不能再加“很”：不能说越来越很胖，要说越来越胖。'},
+  {re:/很很/g, msg:'“很很”重复了，一个“很”就够。'},
+  {re:/的的|了了|是是/g, msg:'同样的字重复了，删掉一个。'},
+  {re:/[（(][^）)]{0,2}[）)]/g, msg:'括号里没写内容，删掉或补上。'},
+  {re:/(吃|跑|说|写|做|学|唱|跳|写|玩|看)的(?=(很|太快|太慢|太好|认真|开心|高兴|慢|快))/g, msg:'动词后面表示“做得怎么样”要用「得」不用「的」。'},
+  {re:/為|裡|學|國|時|這|們|對|寫/g, msg:'这里用了繁体字，请改成简体字。'},
+  {re:/过过|了过|过还/g, msg:'「了」和「过」不能连用：去过就行，不要去过/去了过混用。'},
+  {re:/人們|覺得覺/g, msg:'这里可能有繁体字或重复词语，请检查。'},
+  {re:/(一|二|三|四|五|六|七|八|九|十)个(年|月|节日){0,1}的時候/g, msg:'“的時候”用了繁体，应为“的时候”。'},
+  {re:/我很(?=(喜欢|爱)[\u4e00-\u9fff]{1,3}得很)/g, msg:'“很喜欢……得很”重复表达，去掉“得很”。'},
+  {re:/是…是/g, msg:'“是”重复了。'},
+  {re:/(?<!越来)越来越(?![\u4e00-\u9fff])/g, msg:'「越来越」后面要接形容词或动词（如：越来越好）。'}
+];
+function gradeEssay(){
+  const s=document.getElementById('essay').value;
+  const fb=document.getElementById('essayFeedback');
+  const mk=document.getElementById('markedBox');
+  const el=document.getElementById('errListBox');
+  const rb=document.getElementById('rubricBox');
+  if(hanzi(s)<10){ fb.className='feedback no'; fb.textContent='信太短了，先写完整再提交。'; return; }
+
+  /* 1) 格式检查 */
+  const format=FORMAT_PARTS.map(f=>({...f, ok:f.test(s)}));
+  renderChips(format);
+
+  /* 2) 句型统计 */
+  const used=PATTERNS.map(p=>({...p, ok:p.re(s)}));
+
+  /* 3) 语法错误标记 */
+  const errs=[];
+  GRAMMAR_RULES.forEach(r=>{
+    let m; const re=new RegExp(r.re.source,'g');
+    while((m=re.exec(s))!==null){
+      errs.push({start:m.index, end:m.index+m[0].length, text:m[0], msg:r.msg});
+      if(m.index===re.lastIndex) re.lastIndex++;
+    }
+  });
+  /* 按位置渲染标记 */
+  errs.sort((a,b)=>a.start-b.start);
+  let html='', pos=0;
+  errs.forEach(e=>{
+    if(e.start<pos) return;
+    html+=escapeHtml(s.slice(pos,e.start))+'<span class="err-mark" title="'+escapeAttr(e.msg)+'">'+escapeHtml(s.slice(e.start,e.end))+'</span>';
+    pos=e.end;
+  });
+  html+=escapeHtml(s.slice(pos));
+  mk.innerHTML='<div class="qtext">📄 你的信（红色 = 需要修改的地方，把鼠标放上去看原因）：</div><div class="marked-essay">'+html+'</div>';
+  el.innerHTML = errs.length
+    ? '<div class="err-list">'+errs.map((e,i)=>'<div class="err-item"><b>❌ 修改 '+(i+1)+'：'+escapeHtml(e.text)+'</b><br>'+e.msg+'</div>').join('')+'</div>'
+    : '<div class="feedback ok" style="margin-top:10px;">✅ 没有发现明显的语法错误，很棒！</div>';
+
+  /* 4) 字数 */
+  const n=hanzi(s);
+  const countOk = n>=100 && n<=150;
+
+  /* 5) 按评分标准打分（8 分制） */
+  let band=8;
+  const fOK=format.filter(f=>f.ok).length;
+  const pOK=used.filter(p=>p.ok).length;
+  if(fOK<6) band=Math.min(band, 5);
+  if(fOK<4) band=Math.min(band, 3);
+  if(pOK<2) band=Math.min(band, 5);
+  if(pOK<1) band=Math.min(band, 3);
+  if(!countOk) band=Math.min(band, 6);
+  if(errs.length>=3) band=Math.min(band, 6);
+  if(errs.length>=6) band=Math.min(band, 4);
+  band=Math.max(band,1);
+
+  const descriptors={
+    '7-8':'uses a <b>range</b> of vocabulary and grammatical structures with a <b>few errors</b> which do not hinder communication; organizes information in an <b>appropriate format</b> using simple and some complex cohesive devices.',
+    '5-6':'uses a <b>basic range</b> of vocabulary and structures with <b>some errors</b> which sometimes hinder communication; organizes information in a <b>recognizable format</b>.',
+    '3-4':'uses a <b>limited range</b> of vocabulary and structures with <b>many errors</b> which often hinder communication; presents some information in a partially-recognizable format.',
+    '1-2':'The student does not reach a standard described by the descriptors above.'
+  };
+  const dkey = band>=7?'7-8':band>=5?'5-6':band>=3?'3-4':'1-2';
+
+  fb.className = (errs.length===0 && fOK===6 && countOk) ? 'feedback ok' : 'feedback warn';
+  fb.innerHTML='📊 检查完成！格式 '+fOK+'/6 · 句型 '+pOK+'/'+PATTERNS.length+' · 字数 '+n+'（目标 100～150）· 语法问题 '+errs.length+' 处。请看下面的标记，修改后<b>再提交一次</b>，等级会更新。';
+
+  rb.innerHTML='<div class="rubric"><h3>🏅 评分标准（Achievement level）</h3>'
+    +'<div class="rubric-row"><span>书信格式（6 要素）</span><span>'+fOK+' / 6</span></div>'
+    +'<div class="rubric-row"><span>句型使用（越来越/和…一样/过/最/因为…所以）</span><span>'+pOK+' / '+PATTERNS.length+'</span></div>'
+    +'<div class="rubric-row"><span>字数（100～150 汉字）</span><span>'+(countOk?'✅ '+n:'❌ '+n)+'</span></div>'
+    +'<div class="rubric-row"><span>语法问题</span><span>'+errs.length+' 处</span></div>'
+    +'<div class="band">Achievement level: '+band+' / 8</div>'
+    +'<div class="band-desc"><b>Level descriptor ('+dkey+'):</b> '+descriptors[dkey]+'</div>'
+    +'<div style="margin-top:10px; font-size:.9rem; color:#8a7a6d;">等级是机器预估，最终由老师确认。</div></div>';
+
+  /* 通关条件：格式 6/6、无语法错误、字数达标 */
+  saveRecord({level:3, band:band, format:fOK+'/6', patterns:pOK+'/'+PATTERNS.length, chars:n, errors:errs.length,
+              essay:s.slice(0,500)});
+  if(fOK===6 && errs.length===0 && countOk && pOK>=3){
+    if(!done[3]){ finishLevel(3,'第三关通过！'); }
+  }
+}
+function renderChips(format){
+  document.getElementById('formatChips').innerHTML = format.map(f=>'<span class="chip '+(f.ok?'on':'off')+'">'+(f.ok?'✅ ':'❌ ')+f.name+'</span>').join('');
+}
+function liveCount(){
+  const n=hanzi(document.getElementById('essay').value);
+  document.getElementById('charCount').textContent='汉字数：'+n+'（要求 100～150）';
+}
+function loadExample(){
+  document.getElementById('essay').value =
+'老师：\n\n您好！身体好吗？我给您写这封信，说说我们国家的节日。\n\n我们国家最重要的节日是新年。因为新年是新的开始，所以大家都很开心。庆祝新年的时候，我们吃特别的菜。鱼代表年年有余，饺子的读音和交子一样，也代表好运气。我吃过月饼，月饼和太阳一样圆，代表全家团圆。现在过年越来越热闹了，很多菜的名字都有好的意思。\n\n祝\n身体健康！\n\n你的学生\n安安\n2026年10月15日';
+  liveCount();
+  document.getElementById('essayFeedback').className='feedback warn';
+  document.getElementById('essayFeedback').textContent='📑 这是范文，仅供参考。请点「提交检查」看它怎么被评分，然后写你自己的信（不要抄范文）！';
+}
+/* ================= 成绩记录 ================= */
+const W_KEY='cnPractice_writing_v1';
+function saveRecord(extra){
+  try{
+    const name=(document.getElementById('studentName').value.trim()||'未署名');
+    const rec={name:name, time:new Date().toLocaleString('zh-CN'), ...extra};
+    const arr=JSON.parse(localStorage.getItem(W_KEY)||'[]'); arr.push(rec);
+    localStorage.setItem(W_KEY, JSON.stringify(arr));
+  }catch(e){}
+}
+function buildSummary(){
+  const name=(document.getElementById('studentName').value.trim()||'未署名');
+  const trOK=[...Array(TR.length)].filter((_,i)=>document.getElementById('trf'+i).classList.contains('ok')).length;
+  const qaOK=[...Array(QA.length)].filter((_,i)=>document.getElementById('qaf'+i).classList.contains('ok')).length;
+  const bandEl=document.querySelector('.band');
+  const band=bandEl?bandEl.textContent.replace('Achievement level: ',''):'未评分';
+  return '📝 书信写作练习成绩\n姓名：'+name+'\n时间：'+new Date().toLocaleString('zh-CN')
+    +'\n第一关（翻译句子）：'+trOK+'/'+TR.length+' 题\n第二关（句型问答）：'+qaOK+'/'+QA.length+' 题\n第三关（写信评分）：'+band
+    +'\n（成绩由系统自动生成）';
+}
+function copySummary(){
+  const t=buildSummary();
+  const done=()=>alert('✅ 成绩已复制！请粘贴发给老师（邮件/Teams/微信）。\n\n'+t);
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done).catch(()=>{fallbackCopy(t);done();}); }
+  else{ fallbackCopy(t); done(); }
+}
+function fallbackCopy(t){
+  const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta);
+  ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove();
+}
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escapeAttr(s){return escapeHtml(s).replace(/"/g,'&quot;');}
+
+buildTR(); buildQA();
+</script>
+</body>
+</html>
